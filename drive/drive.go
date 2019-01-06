@@ -42,8 +42,6 @@ func (s *DriveService) writeSnapshot(snapshotName string, files []*File) error {
 	pathPrefix := path.Join(s.dataDir, snapshotName)
 	for _, file := range files {
 		fullFilePath := path.Join(pathPrefix, file.relativePath)
-		println(" :: ", fullFilePath)
-		println(" @@ ", path.Dir(fullFilePath))
 		if err := os.MkdirAll(path.Dir(fullFilePath), os.ModePerm); err != nil {
 			return err
 		}

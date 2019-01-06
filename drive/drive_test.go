@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWriteFile(t *testing.T) {
+func TestWriteSnapshot(t *testing.T) {
 	dirName, err := ioutil.TempDir("", "some_prefix")
 	assert.Nil(t, err)
 	defer os.RemoveAll(dirName)

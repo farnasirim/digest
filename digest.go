@@ -2,14 +2,6 @@
 
 package digest
 
-import (
-	"google.golang.org/api/drive/v3"
-)
-
-type GoogleAuthenticator interface {
-	GetSvc() *drive.Service
-}
-
 type DocsService interface {
 	TakeAndPersistSnapshopt(string) error
 }
