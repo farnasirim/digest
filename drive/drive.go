@@ -42,7 +42,7 @@ func (s *DriveService) writeSnapshot(snapshotName string, files []*File) error {
 	pathPrefix := path.Join(s.dataDir, snapshotName)
 	for _, file := range files {
 		fullFilePath := path.Join(pathPrefix, file.relativePath)
-		if err := os.MkdirAll(path.Dir(fullFilePath), os.ModePerm); err != nil {
+		if err := os.MkdirAll(path.Dir(fullFilePath), 0755); err != nil {
 			return err
 		}
 		if err := ioutil.WriteFile(fullFilePath, file.content, 0644); err != nil {
