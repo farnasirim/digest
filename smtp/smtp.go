@@ -6,12 +6,16 @@ import (
 )
 
 type SimpleSMTP struct {
+	host        string
+	port        string
 	fromAddress string
 	password    string
 }
 
-func NewSimpleSMTP(fromAddress, password string) *SimpleSMTP {
+func NewSimpleSMTP(host, port, fromAddress, password string) *SimpleSMTP {
 	ret := &SimpleSMTP{
+		host:        host,
+		port:        port,
 		fromAddress: fromAddress,
 		password:    password,
 	}
@@ -20,8 +24,8 @@ func NewSimpleSMTP(fromAddress, password string) *SimpleSMTP {
 }
 
 func (s *SimpleSMTP) SendMail(to string, msg []byte) error {
-	err := smtp.SendMail("smtp.gmail.com:587",
-		smtp.PlainAuth("", s.fromAddress, s.password, "smtp.gmail.com"),
+	err := smtp.SendMail(s.host+":"+s.port,
+		smtp.PlainAuth("", s.fromAddress, s.password, s.host),
 		s.fromAddress, []string{to}, msg,
 	)
 
