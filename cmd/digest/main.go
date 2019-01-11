@@ -18,5 +18,8 @@ func main() {
 var rootCmd = &cobra.Command{
 	Use:   "digest",
 	Short: "digest: Your recent google docs changes in your inbox",
-	Long:  ``,
+	Long: `digest: Your recent google docs changes in your inbox
+Almost all of command line flags can also be passed in as
+environement variables with 'DIG_' prefix: e.g. auth-dir -> DIG_AUTH_DIR
+	`,
 }

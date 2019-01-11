@@ -6,12 +6,17 @@ import (
 	"os"
 	"path"
 
+	gdrive "google.golang.org/api/drive/v3"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	homedir "github.com/mitchellh/go-homedir"
 
 	yaml "gopkg.in/yaml.v2"
+
+	"github.com/farnasirim/digest/drive"
+	"github.com/farnasirim/digest/smtp"
 )
 
 var (
@@ -32,8 +37,12 @@ func getHomeDir() string {
 	return homeDir
 }
 
-func getConfigDir() string {
+func getDigestDir() string {
 	return path.Join(getHomeDir(), ".digest")
+}
+
+func getConfigDir() string {
+	return getDigestDir()
 }
 
 func persistConfigs() {
@@ -57,14 +66,6 @@ func persistConfigs() {
 	log.Println("Current config persisted at: " + fileName)
 }
 
-func digestFunc(cmd *cobra.Command, args []string) {
-	// TODO:
-
-	if persistConfs {
-		persistConfigs()
-	}
-}
-
 func initConfig() {
 	if configFile == "" {
 		viper.AddConfigPath(getConfigDir())
@@ -81,7 +82,11 @@ func initConfig() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	viper.SetDefault("folder", "def")
+	viper.SetDefault("folder", "notes")
+	viper.SetDefault("auth-dir", path.Join(getDigestDir(), "auth"))
+	viper.SetDefault("data-dir", path.Join(getDigestDir(), "data"))
+	viper.SetDefault("smtp-server_host", "smtp.gmail.com")
+	viper.SetDefault("smtp-server_port", "587")
 
 	rootCmd.Flags().StringVar(&configFile, "config", "",
 		fmt.Sprintf(
@@ -89,7 +94,19 @@ func init() {
 			getConfigDir()))
 
 	rootCmd.Flags().String("folder", "",
-		"Name of Google Drive folder containing your google docs")
+		"Name of folder in Google Drive that contains your google docs")
+	rootCmd.Flags().String("auth-dir", "",
+		"Where to look for/store google oauth2 credentials. Default: $HOME/.digest/auth")
+	rootCmd.Flags().String("data-dir", "",
+		"Where to keep downloaded google docs. Default: $HOME/.digest/data")
+	rootCmd.Flags().String("smtp-server-host", "",
+		"SMTP server host address to use for sending emails. Default: smtp.gmail.com")
+	rootCmd.Flags().String("smtp-server-port", "",
+		"SMTP server port to use for sending emails. Default: 587")
+	rootCmd.Flags().String("smtp-user", "",
+		`SMTP username to login with. Will also be used as "from" address`)
+	rootCmd.Flags().String("smtp-pass", "",
+		"SMTP password to login with")
 
 	rootCmd.Flags().BoolVar(&persistConfs, "persist-confs", false,
 		`Overwrite the default config file with config from the current run
@@ -100,4 +117,42 @@ Use at own risk.`)
 	viper.SetEnvPrefix("DIG")
 	viper.AutomaticEnv()
 	rootCmd.Run = digestFunc
+}
+
+func digestFunc(cmd *cobra.Command, args []string) {
+	fromAddr := viper.GetString("smtp-user")
+	password := viper.GetString("smtp-pass")
+	smtpHost := viper.GetString("smtp-host")
+	smtpPort := viper.GetString("smtp-port")
+
+	secretDir := viper.GetString("auth-dir")
+	dataDir := viper.GetString("data-dir")
+
+	googleDocsFolder := viper.GetString("folder")
+
+	googleAuthor := drive.NewGoogleAuthenticator(secretDir)
+	authClient, err := googleAuthor.GetOrCreateClient()
+
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	svc, err := gdrive.New(authClient)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	driveService := drive.NewDriveService(dataDir, svc)
+
+	smtpServer := smtp.NewSimpleSMTP(smtpHost, smtpPort, fromAddr, password)
+
+	println(driveService != nil)
+	println(smtpServer != nil)
+
+	println(" :: ", googleDocsFolder)
+	driveService.TakeAndPersistTimedSnapshot(googleDocsFolder)
+
+	if persistConfs {
+		persistConfigs()
+	}
 }
