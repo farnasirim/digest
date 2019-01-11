@@ -43,7 +43,7 @@ func persistConfigs() {
 	}
 
 	viperSettings := viper.AllSettings()
-	fileName := path.Join(getConfigDir(), defaultConfigName)
+	fileName := path.Join(getConfigDir(), defaultConfigName+".yaml")
 
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -73,7 +73,9 @@ func initConfig() {
 		viper.SetConfigFile(configFile)
 	}
 
-	viper.ReadInConfig()
+	if err := viper.ReadInConfig(); err != nil {
+		log.Printf("While reading config file: %s", err.Error())
+	}
 }
 
 func init() {
