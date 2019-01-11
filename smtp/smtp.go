@@ -5,13 +5,13 @@ import (
 	"net/smtp"
 )
 
-type GmailSMTP struct {
+type SimpleSMTP struct {
 	fromAddress string
 	password    string
 }
 
-func NewGmailSMTP(fromAddress, password string) *GmailSMTP {
-	ret := &GmailSMTP{
+func NewSimpleSMTP(fromAddress, password string) *SimpleSMTP {
+	ret := &SimpleSMTP{
 		fromAddress: fromAddress,
 		password:    password,
 	}
@@ -19,7 +19,7 @@ func NewGmailSMTP(fromAddress, password string) *GmailSMTP {
 	return ret
 }
 
-func (s *GmailSMTP) SendMail(to string, msg []byte) error {
+func (s *SimpleSMTP) SendMail(to string, msg []byte) error {
 	err := smtp.SendMail("smtp.gmail.com:587",
 		smtp.PlainAuth("", s.fromAddress, s.password, "smtp.gmail.com"),
 		s.fromAddress, []string{to}, msg,
@@ -28,7 +28,7 @@ func (s *GmailSMTP) SendMail(to string, msg []byte) error {
 	return err
 }
 
-func (s *GmailSMTP) SendMailMultipart(to, subject string, msg []byte) error {
+func (s *SimpleSMTP) SendMailMultipart(to, subject string, msg []byte) error {
 	completedMessage := append([]byte(
 		"From: "+s.fromAddress+"\n"+
 			"To: "+to+"\n"+

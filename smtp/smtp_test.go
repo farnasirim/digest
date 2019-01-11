@@ -9,7 +9,7 @@ import (
 )
 
 func TestSendEmail(t *testing.T) {
-	var gmail digest.SMTPService = NewGmailSMTP("user@gmail.com", "pass")
+	var gmail digest.SMTPService = NewSimpleSMTP("user@gmail.com", "pass")
 
 	err := gmail.SendMailMultipart("receptionist@something.com", "hello",
 		[]byte("body body body..."),
