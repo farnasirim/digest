@@ -76,7 +76,7 @@ func (a *GoogleAuthenticator) tokenToFile(token *oauth2.Token, filePath string) 
 // It then goes on to either create a client object from the saved token.json
 // or create one and persist the token.json in the sercertDir.
 func (a *GoogleAuthenticator) GetOrCreateClient() (*http.Client, error) {
-	credentials, err := ioutil.ReadFile("credentials.json")
+	credentials, err := ioutil.ReadFile(path.Join(a.secretDir, credentialsFileName))
 	if err != nil {
 		return nil, err
 	}

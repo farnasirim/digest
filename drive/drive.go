@@ -1,9 +1,12 @@
 package drive
 
 import (
+	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
+	"time"
 
 	"google.golang.org/api/drive/v3"
 )
@@ -34,7 +37,89 @@ func NewFile(relativePath string, content []byte) *File {
 	}
 }
 
-func (s *DriveService) TakeAndPersistSnapshot(snapshotName string) error {
+func (s *DriveService) TakeAndPersistTimedSnapshot(googleDocsFolder string) error {
+	snapshotName := time.Now().Format(time.RFC3339)
+	return s.TakeAndPersistSnapshot(snapshotName, googleDocsFolder)
+}
+
+func (s *DriveService) TakeAndPersistSnapshot(snapshotName, googleDocsFolder string) error {
+	dirName := path.Join(s.dataDir, snapshotName)
+	err := os.MkdirAll(dirName, 0755)
+	if err != nil {
+		return err
+	}
+
+	folderQuery := `name = '%s' and mimeType = 'application/vnd.google-apps.folder'`
+	folderQuery = fmt.Sprintf(folderQuery, googleDocsFolder)
+
+	foldersResponse, err := s.driveSvc.Files.List().Q(folderQuery).Do()
+	if err != nil {
+		return err
+	}
+
+	if len(foldersResponse.Files) == 0 {
+		log.Fatalf("No folder found with query: %s\n", folderQuery)
+	} else if len(foldersResponse.Files) > 1 {
+		log.Println("Multiple results returned... will use the first one!")
+		for i, folder := range foldersResponse.Files {
+			log.Println(i, folder.Id, folder.Name)
+		}
+	} else {
+		log.Printf("Looking under folder %q with id %q",
+			foldersResponse.Files[0].Name, foldersResponse.Files[0].Id)
+	}
+
+	docsFolder := foldersResponse.Files[0]
+
+	filesUnderFolderQuery := `'%s' in parents`
+	filesUnderFolderQuery = fmt.Sprintf(filesUnderFolderQuery, docsFolder.Id)
+
+	filesUnderFolderResponse, err := s.driveSvc.Files.List().PageSize(500).
+		Q(filesUnderFolderQuery).Fields("files(id, name, trashed)").Do()
+
+	if err != nil {
+		return err
+	}
+
+	// fullContent := ""
+
+	for _, file := range filesUnderFolderResponse.Files {
+		if file.Trashed {
+			continue
+		}
+		resp, err := s.driveSvc.Files.Export(file.Id, "text/plain").Download()
+		if err != nil {
+			log.Printf("Error while processing %q, %q: %s\n", file.Name, file.Id, err.Error())
+			continue
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Println(err.Error())
+			continue
+		}
+
+		nameOnDisk := path.Join(dirName, file.Name+".txt")
+		f, err := os.OpenFile(nameOnDisk, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+		if err != nil {
+			log.Printf("Error while creating %q %q, %q: %s\n", nameOnDisk, file.Name, file.Id, err.Error())
+			continue
+		}
+		if _, err := f.Write(body); err != nil {
+			log.Printf("Error while writing %q, %q: %s\n", file.Name, file.Id, err.Error())
+			continue
+		}
+		f.Close()
+
+		log.Printf("Successfully written %q %q\n", file.Name, file.Id)
+
+		// diff := getDiff(file.Name)
+		// if len(diff) < 5 {
+		// 	continue
+		// }
+		// fullContent += fmt.Sprintf(`<h1> %s </h1>`, file.Name)
+		// fullContent += diff
+		// fullContent += `<br>`
+	}
 	return nil
 }
 
