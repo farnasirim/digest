@@ -1,6 +1,7 @@
 package drive
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -9,6 +10,10 @@ import (
 	"time"
 
 	"google.golang.org/api/drive/v3"
+)
+
+var (
+	ErrLessThanTwoSnapshots = errors.New("Less than two snapshots exist")
 )
 
 type DriveService struct {
@@ -81,8 +86,6 @@ func (s *DriveService) TakeAndPersistSnapshot(snapshotName, googleDocsFolder str
 		return err
 	}
 
-	// fullContent := ""
-
 	for _, file := range filesUnderFolderResponse.Files {
 		if file.Trashed {
 			continue
@@ -111,14 +114,6 @@ func (s *DriveService) TakeAndPersistSnapshot(snapshotName, googleDocsFolder str
 		f.Close()
 
 		log.Printf("Successfully written %q %q\n", file.Name, file.Id)
-
-		// diff := getDiff(file.Name)
-		// if len(diff) < 5 {
-		// 	continue
-		// }
-		// fullContent += fmt.Sprintf(`<h1> %s </h1>`, file.Name)
-		// fullContent += diff
-		// fullContent += `<br>`
 	}
 	return nil
 }
@@ -135,4 +130,34 @@ func (s *DriveService) writeSnapshot(snapshotName string, files []*File) error {
 		}
 	}
 	return nil
+}
+
+func (s *DriveService) LastTwoDirs() (string, string, error) {
+	dirs, err := ioutil.ReadDir(s.dataDir)
+	if err != nil {
+		return "", "", err
+	}
+
+	newest := ""
+	for _, dir := range dirs {
+		if dir.IsDir() && dir.Name() > newest {
+			newest = dir.Name()
+		}
+	}
+
+	beforeNewest := ""
+	for _, dir := range dirs {
+		if dir.IsDir() && dir.Name() > beforeNewest && dir.Name() != newest {
+			beforeNewest = dir.Name()
+		}
+	}
+
+	if beforeNewest == "" {
+		return "", "", ErrLessThanTwoSnapshots
+	}
+
+	beforeNewest = path.Join(s.dataDir, beforeNewest)
+	newest = path.Join(s.dataDir, newest)
+
+	return beforeNewest, newest, nil
 }
