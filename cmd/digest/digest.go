@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
+	"time"
 
 	gdrive "google.golang.org/api/drive/v3"
 
@@ -15,6 +17,7 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/farnasirim/digest/diff"
 	"github.com/farnasirim/digest/drive"
 	"github.com/farnasirim/digest/smtp"
 )
@@ -85,8 +88,8 @@ func init() {
 	viper.SetDefault("folder", "notes")
 	viper.SetDefault("auth-dir", path.Join(getDigestDir(), "auth"))
 	viper.SetDefault("data-dir", path.Join(getDigestDir(), "data"))
-	viper.SetDefault("smtp-server_host", "smtp.gmail.com")
-	viper.SetDefault("smtp-server_port", "587")
+	viper.SetDefault("smtp-server-host", "smtp.gmail.com")
+	viper.SetDefault("smtp-server-port", "587")
 
 	rootCmd.Flags().StringVar(&configFile, "config", "",
 		fmt.Sprintf(
@@ -107,6 +110,8 @@ func init() {
 		`SMTP username to login with. Will also be used as "from" address`)
 	rootCmd.Flags().String("smtp-pass", "",
 		"SMTP password to login with")
+	rootCmd.Flags().String("smtp-to", "",
+		"Address to send the diff email to. Defaults to smtp-user")
 
 	rootCmd.Flags().BoolVar(&persistConfs, "persist-confs", false,
 		`Overwrite the default config file with config from the current run
@@ -122,8 +127,13 @@ Use at own risk.`)
 func digestFunc(cmd *cobra.Command, args []string) {
 	fromAddr := viper.GetString("smtp-user")
 	password := viper.GetString("smtp-pass")
-	smtpHost := viper.GetString("smtp-host")
-	smtpPort := viper.GetString("smtp-port")
+	smtpHost := viper.GetString("smtp-server-host")
+	smtpPort := viper.GetString("smtp-server-port")
+	smtpTo := viper.GetString("smtp-to")
+
+	if smtpTo == "" {
+		smtpTo = fromAddr
+	}
 
 	secretDir := viper.GetString("auth-dir")
 	dataDir := viper.GetString("data-dir")
@@ -146,13 +156,49 @@ func digestFunc(cmd *cobra.Command, args []string) {
 
 	smtpServer := smtp.NewSimpleSMTP(smtpHost, smtpPort, fromAddr, password)
 
-	println(driveService != nil)
-	println(smtpServer != nil)
-
-	println(" :: ", googleDocsFolder)
 	driveService.TakeAndPersistTimedSnapshot(googleDocsFolder)
 
+	older, newer, err := driveService.LastTwoDirs()
+	if err == drive.ErrLessThanTwoSnapshots {
+		log.Println("Not enough directories to send the diff")
+		log.Println("Exiting successfully")
+		return
+	}
+
+	differ := diff.NewPlainTextDiff()
+	diff := differ.DiffDirsHtml(older, newer)
+	if strings.TrimSpace(diff) == "" {
+		diff = `
+<div style="word-wrap: break-word; width:700px; font-family: monospace;">
+<font size=4px color="darkred">
+		No new notes! *LOUD GASP* ⊙▃⊙ 
+</font>
+</div>
+		`
+	}
+
+	diff = `
+<html>
+
+    <body bgcolor="#e6e6fa">
+
+` + diff + `
+
+    </body>
+</html>
+	`
+
+	now := time.Now()
+	subject := fmt.Sprintf("%d-%d-%d", now.Year(), now.Month(), now.Day())
+	if err := smtpServer.SendMailHtml(smtpTo, subject, []byte(diff)); err != nil {
+		log.Fatalln(err.Error())
+		return
+	}
+
+	log.Println("Email sent successfully")
+
 	if persistConfs {
+		log.Println("Persisting configurations")
 		persistConfigs()
 	}
 }
