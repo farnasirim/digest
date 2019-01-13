@@ -32,7 +32,7 @@ func (s *SimpleSMTP) SendMail(to string, msg []byte) error {
 	return err
 }
 
-func (s *SimpleSMTP) SendMailMultipart(to, subject string, msg []byte) error {
+func (s *SimpleSMTP) SendMailHtml(to, subject string, msg []byte) error {
 	completedMessage := append([]byte(
 		"From: "+s.fromAddress+"\n"+
 			"To: "+to+"\n"+
