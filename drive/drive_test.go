@@ -103,6 +103,6 @@ func TestLastTwoDirsSimple(t *testing.T) {
 	older, newer, err := driveService.LastTwoDirs()
 
 	assert.Nil(t, err)
-	assert.Equal(t, older, "b")
-	assert.Equal(t, newer, "c")
+	assert.Equal(t, older, path.Join(dirName, "b"))
+	assert.Equal(t, newer, path.Join(dirName, "c"))
 }
