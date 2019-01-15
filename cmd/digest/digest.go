@@ -48,7 +48,7 @@ func getConfigDir() string {
 	return getDigestDir()
 }
 
-func persistConfigs() {
+func persistConfigs(confs interface{}) {
 	err := os.MkdirAll(getConfigDir(), 0755)
 	if err != nil {
 		log.Fatalln(err.Error())
@@ -62,7 +62,7 @@ func persistConfigs() {
 		log.Fatalln(err.Error())
 	}
 
-	err = yaml.NewEncoder(file).Encode(viperSettings)
+	err = yaml.NewEncoder(file).Encode(confs)
 	if err != nil {
 		log.Fatalf("unable to marshal config to YAML: %v", err)
 	}
@@ -79,6 +79,8 @@ func initConfig() {
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("While reading config file: %s", err.Error())
+		log.Printf("Creating empty config file")
+		persistConfs(make(map[string]intrface{}))
 	}
 }
 
@@ -199,6 +201,6 @@ func digestFunc(cmd *cobra.Command, args []string) {
 
 	if persistConfs {
 		log.Println("Persisting configurations")
-		persistConfigs()
+		persistConfigs(viper.AllSettings())
 	}
 }
