@@ -13,6 +13,10 @@ Have a look at
 digest --help
 ```
 First time usage:
+Unfortunately setting up the google docs access token takes a few clicks and 
+keystrokes. See 
+[my blog post](https://blog.farnasirim.ir/2018/12/changes-to-my-notes-in-google-docs-in.html)
+for full instructions.
 ```
 mkdir -p ~/.digest/auth/
 cp $PATH_TO_GOOGLE_DRIVE_CREDENTIALS ~/.digest/auth/
@@ -37,48 +41,11 @@ Email sent successfully
 ```
 
 Sample email content: <br>
+![email normal](doc/digest-email-normal.png)
 
-<div style=" border: 1px solid black ; padding: 25px; ">
+Or when you haven't had any changes <br>
+![email empty](doc/digest-email-empty.png)
 
-<h2> Machine Learning, Probability and Statistics.txt </h2>
-<div style="word-wrap: break-word; width:700px; font-family: monospace;">
-<font size="4px" color="darkgreen">
- <br> With c not too large, it is robust against outliers.
- <br> Geometrical interpretation: Make inner product theta . x to be >= 1
- <br> On the other hand, we’re minimizing size of the theta with the regularization term B.
- <br> That means we’re demanding the normal to the separator (theta) and an x must be in the same direction for true examples and opposite direction for false examples.
-</font>
-</div>
-<br><br>
-
-
-<h2> Algorithms and problems.txt </h2>
-<div style="word-wrap: break-word; width:700px; font-family: monospace;">
-<font size="4px" color="darkgreen">
-
-<h4>Segment Tree </h4>
-Update the children with “toProp”, not the ”value”. 
-Update self from the children, not the intermediate query values in the get function: 
-They not necessarily represent your children since they at least one of your children is only partially included in them because of the query (query has intersected you without supersetting you) 
-</font>
-</div>
-
-</div>
-
-
-or when you haven't had any updates in your docs:<br>
-
-
-<div style=" border: 1px solid black ;  padding: 25px;">
-
-<font color="darkred">
-		No new notes! *LOUD GASP* ⊙▃⊙ 
-</font>
-
-</div>
-
-Unfortunately setting up the google docs access token takes a few clicks and keystrokes. See [this](https://blog.farnasirim.ir/2018/12/changes-to-my-notes-in-google-docs-in.html
-) blog post for full instructions.
 
 ## License
 MIT
