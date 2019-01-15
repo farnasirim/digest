@@ -192,7 +192,7 @@ func digestFunc(cmd *cobra.Command, args []string) {
 	`
 
 	now := time.Now()
-	subject := fmt.Sprintf("%d-%d-%d", now.Year(), now.Month(), now.Day())
+	subject := fmt.Sprintf("digest %d-%d-%d", now.Year(), now.Month(), now.Day())
 	if err := smtpServer.SendMailHtml(smtpTo, subject, []byte(diff)); err != nil {
 		log.Fatalln(err.Error())
 		return
