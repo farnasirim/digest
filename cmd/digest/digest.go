@@ -117,6 +117,7 @@ func init() {
 
 	rootCmd.Flags().BoolVar(&persistConfs, "persist-confs", false,
 		`Overwrite the default config file with config from the current run
+if executed successfully.
 WARNING: may write sensitive information e.g. smtp password to file.
 Use at own risk.`)
 
