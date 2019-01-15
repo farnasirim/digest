@@ -44,16 +44,19 @@ func getDigestDir() string {
 	return path.Join(getHomeDir(), ".digest")
 }
 
+func getYamConfigFileName() string {
+	return path.Join(getConfigDir(), defaultConfigName+".yaml")
+}
+
 func getConfigDir() string {
 	return getDigestDir()
 }
 
-func persistConfigs(confs interface{}) {
+func persistConfigs(confs interface{}, fileName string) {
 	err := os.MkdirAll(getConfigDir(), 0755)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
-	fileName := path.Join(getConfigDir(), defaultConfigName+".yaml")
 
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -64,7 +67,6 @@ func persistConfigs(confs interface{}) {
 	if err != nil {
 		log.Fatalf("unable to marshal config to YAML: %v", err)
 	}
-	log.Println("Current config persisted at: " + fileName)
 }
 
 func initConfig() {
@@ -78,7 +80,7 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("While reading config file: %s", err.Error())
 		log.Printf("Creating empty config file")
-		persistConfigs(make(map[string]interface{}))
+		persistConfigs(make(map[string]interface{}), getYamConfigFileName())
 	}
 }
 
@@ -199,6 +201,7 @@ func digestFunc(cmd *cobra.Command, args []string) {
 
 	if persistConfs {
 		log.Println("Persisting configurations")
-		persistConfigs(viper.AllSettings())
+		persistConfigs(viper.AllSettings(), getYamConfigFileName())
+		log.Println("Current config persisted at: " + getYamConfigFileName())
 	}
 }
