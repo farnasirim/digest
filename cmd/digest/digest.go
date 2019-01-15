@@ -53,8 +53,6 @@ func persistConfigs(confs interface{}) {
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
-
-	viperSettings := viper.AllSettings()
 	fileName := path.Join(getConfigDir(), defaultConfigName+".yaml")
 
 	file, err := os.Create(fileName)
@@ -80,7 +78,7 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("While reading config file: %s", err.Error())
 		log.Printf("Creating empty config file")
-		persistConfs(make(map[string]intrface{}))
+		persistConfigs(make(map[string]interface{}))
 	}
 }
 
