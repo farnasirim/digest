@@ -15,7 +15,7 @@ digest --help
 First time usage:
 Unfortunately setting up the google docs access token takes a few clicks and 
 keystrokes. See 
-[my blog post](https://blog.farnasirim.ir/2018/12/changes-to-my-notes-in-google-docs-in.html)
+[my blog post](https://blog.farnasirim.ir/2019/01/changes-to-my-notes-in-google-docs-sent.html)
 for full instructions.
 ```
 mkdir -p ~/.digest/auth/
