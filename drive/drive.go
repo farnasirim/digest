@@ -93,11 +93,14 @@ func (s *DriveService) TakeAndPersistSnapshot(snapshotName, googleDocsFolder str
 		resp, err := s.driveSvc.Files.Export(file.Id, "text/plain").Download()
 		if err != nil {
 			log.Printf("Error while processing %q, %q: %s\n", file.Name, file.Id, err.Error())
+			s.TakeAndPersistSnapshot(snapshotName, file.Name)
 			continue
 		}
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Println(err.Error())
+			log.Println("tryiing to recurse on dir")
+
 			continue
 		}
 
