@@ -14,6 +14,7 @@ import (
 
 var (
 	ErrLessThanTwoSnapshots = errors.New("Less than two snapshots exist")
+	ErrNoSuchFolder         = errors.New("No such folder")
 )
 
 type DriveService struct {
@@ -63,18 +64,22 @@ func (s *DriveService) TakeAndPersistSnapshot(snapshotName, googleDocsFolder str
 	}
 
 	if len(foldersResponse.Files) == 0 {
-		log.Fatalf("No folder found with query: %s\n", folderQuery)
-	} else if len(foldersResponse.Files) > 1 {
-		log.Println("Multiple results returned... will use the first one!")
-		for i, folder := range foldersResponse.Files {
-			log.Println(i, folder.Id, folder.Name)
-		}
-	} else {
-		log.Printf("Looking under folder %q with id %q",
-			foldersResponse.Files[0].Name, foldersResponse.Files[0].Id)
+		log.Fatalln("No folder found with query: %s\n", folderQuery)
 	}
 
 	docsFolder := foldersResponse.Files[0]
+
+	if len(foldersResponse.Files) > 1 {
+		log.Println("Multiple results returned... will use the first that matches one!")
+		for i, folder := range foldersResponse.Files {
+			log.Println(i, folder.Id, folder.Name)
+			if folder.Name == googleDocsFolder {
+				docsFolder = foldersResponse.Files[i]
+				log.Println("Choosing:", i, folder.Id, folder.Name)
+				break
+			}
+		}
+	}
 
 	filesUnderFolderQuery := `'%s' in parents`
 	filesUnderFolderQuery = fmt.Sprintf(filesUnderFolderQuery, docsFolder.Id)
